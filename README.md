@@ -1,6 +1,6 @@
 # TaskMaster Pro
 
-A backend REST API for task management built with Node.js, Express, and MongoDB.
+A backend REST API for multi user task management built with Node.js, Express, and MongoDB.
 
 ## Features
 
