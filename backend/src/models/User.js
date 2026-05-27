@@ -1,8 +1,3 @@
-/**
- * User Model
- * Mongoose schema for users collection
- */
-
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
