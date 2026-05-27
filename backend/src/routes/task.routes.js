@@ -9,7 +9,9 @@ const multer = require('multer');
 const path = require('path');
 const { body, validationResult } = require('express-validator');
 const Task = require('../models/Task');
+const User = require('../models/User');
 const { authenticateToken } = require('../middleware/auth.middleware');
+const { isAdmin, isManagerOrAdmin } = require('../middleware/role.middleware');
 
 const router = express.Router();
 
@@ -50,6 +52,7 @@ const taskValidation = [
 ];
 
 // GET /api/v1/tasks - Get all tasks (with pagination, filtering)
+// Role-based: User sees own, Manager sees own + team, Admin sees all
 router.get('/', authenticateToken, async (req, res, next) => {
     try {
         const {
@@ -63,9 +66,24 @@ router.get('/', authenticateToken, async (req, res, next) => {
         } = req.query;
 
         const userId = req.user.userId;
+        const userRole = req.user.role;
 
-        // Build query filter
-        const filter = { userId };
+        // Build query filter based on role
+        let filter = {};
+
+        if (userRole === 'admin') {
+            // Admin sees all tasks
+            filter = {};
+        } else if (userRole === 'manager') {
+            // Manager sees own tasks + team members' tasks
+            const manager = await User.findById(userId).select('teamMembers');
+            const allowedUserIds = [userId, ...(manager?.teamMembers || [])];
+            filter = { userId: { $in: allowedUserIds } };
+        } else {
+            // Regular user sees only their own tasks
+            filter = { userId };
+        }
+
         if (status) filter.status = status;
         if (priority) filter.priority = priority;
         if (search) {
