@@ -501,43 +501,6 @@ curl -X POST http://localhost:5000/api/v1/tasks \
   -d '{"title":"My Task","priority":"high","status":"pending"}'
 ```
 
----
-
-## ☁️ AWS Deployment
-
-### Architecture
-
-```
-Users
-  ↓
-CloudFront (HTTPS + CDN)
-  ↓
-S3 Bucket (React /dist files)
-  ↓ (API calls)
-EC2 t2.micro (Node.js + PM2)
-  ↓
-MongoDB Atlas (cloud database)
-```
-
-### Steps
-
-1. **MongoDB Atlas** → Create free cluster → get connection string
-2. **EC2** → Launch Ubuntu t2.micro → upload backend → run with PM2
-3. **S3** → Create bucket → enable static hosting → upload `npm run build` output
-4. **CloudFront** → Point to S3 → get HTTPS URL
-5. **Update** `axios.js` baseURL to EC2 public IP
-6. **Update** CORS in `server.js` to allow S3/CloudFront URL
-
-### Free Tier Costs: $0/month
-
-| Service | Free Limit |
-|---------|-----------|
-| EC2 t2.micro | 750 hrs/month |
-| S3 | 5 GB storage |
-| CloudFront | 1 TB transfer |
-| MongoDB Atlas | 512 MB |
-
----
 
 ## 📋 Tech Stack
 
