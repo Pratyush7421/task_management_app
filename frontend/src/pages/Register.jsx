@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 
 export default function Register() { // registration form with name, email, password
     const [formData, setFormData] = useState({ 
@@ -11,21 +11,29 @@ export default function Register() { // registration form with name, email, pass
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const { register } = useAuth();
     const navigate = useNavigate();
 
     const handleChange = (e) => { // updates form field on input change
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = async (e) => { // registers user and redirects to dashboard
+    const handleSubmit = async (e) => { // registers user and redirects to OTP verification
         e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
-            await register(formData.name, formData.email, formData.password);
-            navigate('/dashboard');
+            const response = await api.post('/auth/register', {
+                name: formData.name,
+                email: formData.email,
+                password: formData.password
+            });
+            
+            if (response.data.requiresVerification) {
+                navigate(`/verify-otp?email=${encodeURIComponent(response.data.email)}`);
+            } else {
+                navigate('/login');
+            }
         } catch (err) {
             setError(err.response?.data?.error || 'Registration failed');
         } finally {

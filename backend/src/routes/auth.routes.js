@@ -32,5 +32,7 @@ const loginValidation = [ // validates email and password for login
 router.post('/register', registerValidation, authController.register);
 router.post('/login', loginValidation, authController.login);
 router.get('/profile', authenticateToken, authController.getProfile);
+router.post('/verify-otp', authController.verifyOTP);
+router.post('/resend-otp', authController.resendOTP);
 
 module.exports = router;
