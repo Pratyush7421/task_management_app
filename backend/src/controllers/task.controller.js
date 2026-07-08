@@ -35,15 +35,35 @@ exports.getTaskById = async (req, res, next) => { // fetches single task by ID (
     }
 };
 
-exports.createTask = async (req, res, next) => { // creates new task
+exports.createTask = async (req, res, next) => { // creates new task and sends notification email
     try {
+        // Pass current user info for email notification context
+        const currentUser = {
+            _id: req.user.userId,
+            name: req.user.name || 'Admin',
+            email: req.user.email
+        };
+        
         const result = await TaskService.createTask(
             req.user.userId,
-            req.body
+            req.body,
+            currentUser
         );
+        
+        // Build response message based on email status
+        let message = 'Task created successfully';
+        if (result.emailSent) {
+            message += '. Notification email sent successfully.';
+        } else if (result.emailError) {
+            message += '. Email notification could not be delivered.';
+        }
+        
         res.status(201).json({
-            message: 'Task created successfully',
-            ...result
+            message,
+            task: result.task,
+            emailSent: result.emailSent,
+            emailStatus: result.emailStatus,
+            ...(result.emailError && { emailError: result.emailError })
         });
     } catch (err) {
         next(err);

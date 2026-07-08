@@ -35,6 +35,12 @@ const taskSchema = new mongoose.Schema({ // defines task schema with title, stat
     attachmentUrl: {
         type: String,
         default: null
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+        description: 'Admin who created this task on behalf of the user'
     }
 }, {
     timestamps: true

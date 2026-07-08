@@ -15,16 +15,6 @@ const errorHandler = (err, req, res, next) => { // handles errors, maps to appro
         message = `${field} already exists`;
     }
 
-    if (err.code === '23505') {
-        statusCode = 409;
-        message = 'Resource already exists';
-    }
-
-    if (err.code === '23503') {
-        statusCode = 400;
-        message = 'Referenced resource does not exist';
-    }
-
     if (err.name === 'JsonWebTokenError') {
         statusCode = 401;
         message = 'Invalid token';
@@ -33,16 +23,6 @@ const errorHandler = (err, req, res, next) => { // handles errors, maps to appro
     if (err.name === 'TokenExpiredError') {
         statusCode = 401;
         message = 'Token expired. Please log in again.';
-    }
-
-    if (err.code === 'LIMIT_FILE_SIZE') {
-        statusCode = 400;
-        message = 'File too large. Maximum size is 5MB.';
-    }
-
-    if (err.message && err.message.includes('Only images, PDFs, and documents')) {
-        statusCode = 400;
-        message = err.message;
     }
 
     if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {

@@ -35,7 +35,11 @@ export default function Login() { // login form with email/password validation
     return (
         <div className="auth-container">
             <div className="auth-card">
-                <h2>Login to TaskMaster</h2>
+                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                    <img src="/kaara.png" alt="Kaara" style={{ width: '64px', height: '64px', marginBottom: '16px' }} />
+                    <h2>Welcome Back</h2>
+                    <p>Sign in to TaskMaster Pro</p>
+                </div>
 
                 {error && <div className="error-message">{error}</div>}
 
@@ -48,6 +52,7 @@ export default function Login() { // login form with email/password validation
                             value={formData.email}
                             onChange={handleChange}
                             required
+                            placeholder="Enter your email"
                         />
                     </div>
 
@@ -59,16 +64,17 @@ export default function Login() { // login form with email/password validation
                             value={formData.password}
                             onChange={handleChange}
                             required
+                            placeholder="Enter your password"
                         />
                     </div>
 
-                    <button type="submit" disabled={loading}>
-                        {loading ? 'Logging in...' : 'Login'}
+                    <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
+                        {loading ? 'Signing in...' : 'Sign In'}
                     </button>
                 </form>
 
-                <p>
-                    Don't have an account? <Link to="/register">Register</Link>
+                <p style={{ textAlign: 'center', marginTop: '24px' }}>
+                    Don't have an account? <Link to="/register">Create account</Link>
                 </p>
             </div>
         </div>

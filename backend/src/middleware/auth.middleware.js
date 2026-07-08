@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const authenticateToken = (req, res, next) => { // verifies JWT, attaches user to req.user
-    const authHeader = req.headers['authorization'];
+    const authHeader = req.headers['authorization'];//it reads the token
     const token = authHeader && authHeader.split(' ')[1];//pull actual token and split Bearer from header
 // If no token, return 401 Unauthorized
     if (!token) {

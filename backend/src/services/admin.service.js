@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Task = require('../models/Task');
+const EmailLog = require('../models/EmailLog');
+const { sendTaskNotificationEmail, buildTaskNotificationEmailData } = require('./email.service');
 
 const getAllUsers = async ({ role, search }) => { // fetches all users with filters, sorted by createdAt desc
     const filter = {};
@@ -231,6 +233,99 @@ const getAdminStats = async () => { // returns system-wide statistics
     };
 };
 
+/**
+ * Logs email attempt to EmailLog collection
+ * @param {Object} logData - Email log data
+ */
+const logEmailAttempt = async (logData) => {
+    try {
+        await EmailLog.create(logData);
+    } catch (error) {
+        console.error('Failed to log email attempt:', error.message);
+    }
+};
+
+/**
+ * Sends task notification email and logs the attempt
+ * Non-blocking - task creation succeeds even if email fails
+ */
+const sendTaskNotification = async (task, recipientUser, assignedByUser) => {
+    const emailData = buildTaskNotificationEmailData({
+        recipientUser,
+        task,
+        assignedByUser: assignedByUser || { _id: null, name: 'Administrator', email: null },
+        dashboardUrl: process.env.FRONTEND_URL || 'http://localhost:5173/dashboard'
+    });
+
+    console.log('Task created successfully');
+    console.log('Preparing notification email...');
+
+    const emailResult = await sendTaskNotificationEmail(emailData);
+
+    await logEmailAttempt({
+        recipientEmail: recipientUser.email,
+        recipientName: recipientUser.name,
+        subject: `New Task Notification - ${task.title}`,
+        templateName: 'taskNotification',
+        taskId: task._id,
+        status: emailResult.success ? 'SUCCESS' : 'FAILED',
+        errorMessage: emailResult.error || null,
+        sentAt: new Date()
+    });
+
+    if (emailResult.success) {
+        console.log('Notification email sent successfully.');
+    } else {
+        console.log('Email sending failed.');
+        console.log('Reason:', emailResult.error);
+    }
+
+    return {
+        emailSent: emailResult.success,
+        emailError: emailResult.error || null
+    };
+};
+
+const createTaskForUser = async (taskData, adminUser = null) => {
+    const { userId, title, description, status, priority, due_date } = taskData;
+
+    const targetUserQuery = User.findById(userId);
+    const targetUser = typeof targetUserQuery?.select === 'function'
+        ? await targetUserQuery.select('name email')
+        : await targetUserQuery;
+
+    if (!targetUser) {
+        const error = new Error('User not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    const task = await Task.create({
+        userId: targetUser._id,
+        title,
+        description: description || '',
+        status: status || 'pending',
+        priority: priority || 'medium',
+        dueDate: due_date || null,
+        createdBy: adminUser?._id || null
+    });
+
+    let emailResult = { emailSent: false, emailError: null };
+
+    try {
+        emailResult = await sendTaskNotification(task, targetUser, adminUser);
+    } catch (error) {
+        console.error('Failed to send task notification:', error.message);
+    }
+
+    return {
+        task,
+        emailSent: emailResult.emailSent,
+        emailStatus: emailResult.emailSent ? 'SUCCESS' : 'FAILED',
+        emailError: emailResult.emailError
+    };
+};
+
 module.exports = {
     getAllUsers,
     getUserById,
@@ -238,5 +333,6 @@ module.exports = {
     updateUserTeam,
     getAllTasksAdmin,
     deleteTaskAdmin,
-    getAdminStats
+    getAdminStats,
+    createTaskForUser
 };

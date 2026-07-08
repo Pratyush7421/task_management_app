@@ -69,3 +69,37 @@ exports.getStats = async (req, res, next) => { // returns system-wide statistics
         next(err);
     }
 };
+
+exports.createTaskForUser = async (req, res, next) => { // admin creates task for any user
+    try {
+        // Pass admin user info for email notification context
+        const adminUser = {
+            _id: req.user.userId,
+            name: req.user.name || 'Admin',
+            email: req.user.email
+        };
+        
+        const result = await AdminService.createTaskForUser(
+            req.body,
+            adminUser
+        );
+        
+        // Build response message based on email status
+        let message = 'Task created successfully for user';
+        if (result.emailSent) {
+            message += '. Notification email sent successfully.';
+        } else if (result.emailError) {
+            message += '. Email notification could not be delivered.';
+        }
+        
+        res.status(201).json({
+            message,
+            task: result.task,
+            emailSent: result.emailSent,
+            emailStatus: result.emailStatus,
+            ...(result.emailError && { emailError: result.emailError })
+        });
+    } catch (err) {
+        next(err);
+    }
+};

@@ -44,13 +44,17 @@ export default function Register() { // registration form with name, email, pass
     return (
         <div className="auth-container">
             <div className="auth-card">
-                <h2>Register for TaskMaster</h2>
+                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                    <img src="/kaara.png" alt="Kaara" style={{ width: '64px', height: '64px', marginBottom: '16px' }} />
+                    <h2>Create Account</h2>
+                    <p>Get started with TaskMaster Pro</p>
+                </div>
 
                 {error && <div className="error-message">{error}</div>}
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>Name</label>
+                        <label>Full Name</label>
                         <input
                             type="text"
                             name="name"
@@ -58,6 +62,7 @@ export default function Register() { // registration form with name, email, pass
                             onChange={handleChange}
                             required
                             minLength={2}
+                            placeholder="Enter your full name"
                         />
                     </div>
 
@@ -69,6 +74,7 @@ export default function Register() { // registration form with name, email, pass
                             value={formData.email}
                             onChange={handleChange}
                             required
+                            placeholder="Enter your email"
                         />
                     </div>
 
@@ -81,16 +87,17 @@ export default function Register() { // registration form with name, email, pass
                             onChange={handleChange}
                             required
                             minLength={6}
+                            placeholder="Create a password (min 6 characters)"
                         />
                     </div>
 
-                    <button type="submit" disabled={loading}>
-                        {loading ? 'Registering...' : 'Register'}
+                    <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
+                        {loading ? 'Creating account...' : 'Create Account'}
                     </button>
                 </form>
 
-                <p>
-                    Already have an account? <Link to="/login">Login</Link>
+                <p style={{ textAlign: 'center', marginTop: '24px' }}>
+                    Already have an account? <Link to="/login">Sign in</Link>
                 </p>
             </div>
         </div>

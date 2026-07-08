@@ -2,13 +2,17 @@ import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import TaskForm from '../components/TaskForm';
+import AdminTaskForm from '../components/AdminTaskForm';
+import { useAuth } from '../context/AuthContext';
 
 export default function Dashboard() { // displays user's tasks with filters and CRUD operations
+    const { isAdmin } = useAuth();
     const [tasks, setTasks] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
+    const [showAdminForm, setShowAdminForm] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
     const [filters, setFilters] = useState({ 
         status: '', 
@@ -79,15 +83,51 @@ export default function Dashboard() { // displays user's tasks with filters and 
         }
     };
 
-    const getPriorityClass = (priority) => `priority-${priority}`; // returns CSS class for priority
-    const getStatusClass = (status) => `status-${status}`; // returns CSS class for status
+    const handleCreateTaskForUser = async (formData) => { // admin creates task for user
+        try {
+            const response = await api.post('/admin/tasks', formData);
+            setShowAdminForm(false);
+            fetchTasks();
+            fetchStats();
+            
+            // Show success message with email status
+            const emailStatus = response.data.emailSent ? 'Email sent successfully' : 'Email notification failed';
+            alert(`Task created successfully for user. ${emailStatus}`);
+        } catch (err) {
+            setError('Failed to create task for user');
+        }
+    };
+
+    const getPriorityBadgeClass = (priority) => {
+        const classes = {
+            high: 'badge badge-priority-high',
+            medium: 'badge badge-priority-medium',
+            low: 'badge badge-priority-low'
+        };
+        return classes[priority] || 'badge';
+    };
+
+    const getStatusBadgeClass = (status) => {
+        const classes = {
+            pending: 'badge badge-status-pending',
+            in_progress: 'badge badge-status-in_progress',
+            completed: 'badge badge-status-completed'
+        };
+        return classes[status] || 'badge';
+    };
+
+    const formatStatus = (status) => {
+        return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    };
 
     return (
         <div className="dashboard">
             <Navbar />
             
             <div className="container">
-                <h1>My Tasks</h1>
+                <div className="dashboard-header">
+                    <h1>Tasks</h1>
+                </div>
                 
                 {error && <div className="error-message">{error}</div>}
                 
@@ -133,22 +173,35 @@ export default function Dashboard() { // displays user's tasks with filters and 
                         <option value="high">High</option>
                     </select>
                     
-                    <button onClick={() => setShowForm(true)} className="btn-primary">
+                    <button onClick={() => setShowForm(true)} className="btn btn-primary">
                         + New Task
                     </button>
+                    
+                    {isAdmin && (
+                        <button 
+                            onClick={() => setShowAdminForm(true)} 
+                            className="btn btn-primary"
+                        >
+                            + Add Task for User
+                        </button>
+                    )}
                 </div>
 
                 {loading ? (
-                    <p>Loading...</p>
+                    <div className="card" style={{ textAlign: 'center', padding: '48px' }}>
+                        <p>Loading tasks...</p>
+                    </div>
                 ) : tasks.length === 0 ? (
-                    <p>No tasks found. Create your first task!</p>
+                    <div className="card" style={{ textAlign: 'center', padding: '48px' }}>
+                        <p>No tasks found. Create your first task!</p>
+                    </div>
                 ) : (
                     <div className="task-list">
                         {tasks.map(task => (
                             <div key={task._id} className="task-card">
                                 <div className="task-header">
                                     <h3>{task.title}</h3>
-                                    <span className={getPriorityClass(task.priority)}>
+                                    <span className={getPriorityBadgeClass(task.priority)}>
                                         {task.priority}
                                     </span>
                                 </div>
@@ -156,8 +209,8 @@ export default function Dashboard() { // displays user's tasks with filters and 
                                 <p className="task-description">{task.description}</p>
                                 
                                 <div className="task-meta">
-                                    <span className={getStatusClass(task.status)}>
-                                        {task.status.replace('_', ' ')}
+                                    <span className={getStatusBadgeClass(task.status)}>
+                                        {formatStatus(task.status)}
                                     </span>
                                     {task.dueDate && (
                                         <span className="due-date">
@@ -166,19 +219,26 @@ export default function Dashboard() { // displays user's tasks with filters and 
                                     )}
                                 </div>
                                 
-                                <div className="task-actions">
-                                    <button 
-                                        onClick={() => setEditingTask(task)}
-                                        className="btn-edit"
-                                    >
-                                        Edit
-                                    </button>
-                                    <button 
-                                        onClick={() => handleDelete(task._id)}
-                                        className="btn-delete"
-                                    >
-                                        Delete
-                                    </button>
+                                <div className="task-footer">
+                                    {task.assignedBy && (
+                                        <span className="assigned-by">
+                                            Assigned by: {task.assignedBy.name}
+                                        </span>
+                                    )}
+                                    <div className="task-actions">
+                                        <button 
+                                            onClick={() => setEditingTask(task)}
+                                            className="btn btn-secondary btn-sm"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDelete(task._id)}
+                                            className="btn btn-danger btn-sm"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -189,6 +249,13 @@ export default function Dashboard() { // displays user's tasks with filters and 
                     <TaskForm 
                         onSubmit={handleCreate} 
                         onCancel={() => setShowForm(false)} 
+                    />
+                )}
+                
+                {showAdminForm && (
+                    <AdminTaskForm 
+                        onSubmit={handleCreateTaskForUser} 
+                        onCancel={() => setShowAdminForm(false)} 
                     />
                 )}
                 

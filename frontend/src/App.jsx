@@ -13,8 +13,8 @@ import './App.css';
 function App() {
     return (
         // Wrap the application in the AuthProvider to manage authentication state
-        <AuthProvider>
-            <BrowserRouter>
+        <AuthProvider> 
+            <BrowserRouter> 
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login />} />

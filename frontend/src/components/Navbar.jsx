@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 export default function Navbar() { // navigation bar with user info and logout
     const { user, logout, isAdmin } = useAuth();
     const navigate = useNavigate();
-
     const handleLogout = () => { // logs out user and redirects to login
         logout();
         navigate('/login');
@@ -13,7 +12,10 @@ export default function Navbar() { // navigation bar with user info and logout
     return (
         <nav className="navbar">
             <div className="nav-brand">
-                <Link to="/dashboard">TaskMaster Pro</Link>
+                <Link to="/dashboard">
+                    <img src="/kaara.png" alt="Kaara" />
+                    <span>TaskMaster</span>
+                </Link>
             </div>
 
             <div className="nav-links">

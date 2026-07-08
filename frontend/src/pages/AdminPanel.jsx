@@ -47,7 +47,14 @@ export default function AdminPanel() { // admin dashboard with user management a
         }
     };
 
-    const getRoleBadgeClass = (role) => `role-badge role-${role}`; // returns CSS class for role badge
+    const getRoleBadgeClass = (role) => {
+        const classes = {
+            admin: 'badge badge-role-admin',
+            manager: 'badge badge-role-manager',
+            user: 'badge badge-role-user'
+        };
+        return classes[role] || 'badge';
+    };
 
     return (
         <div className="admin-panel">
@@ -95,9 +102,11 @@ export default function AdminPanel() { // admin dashboard with user management a
                 <h2>All Users</h2>
                 
                 {loading ? (
-                    <p>Loading...</p>
+                    <div className="card" style={{ textAlign: 'center', padding: '48px' }}>
+                        <p>Loading users...</p>
+                    </div>
                 ) : (
-                    <div className="users-table">
+                    <div className="table-container">
                         <table>
                             <thead>
                                 <tr>
@@ -125,7 +134,7 @@ export default function AdminPanel() { // admin dashboard with user management a
                                                     setSelectedUser(user);
                                                     setNewRole(user.role);
                                                 }}
-                                                className="btn-edit"
+                                                className="btn btn-secondary btn-sm"
                                             >
                                                 Change Role
                                             </button>
@@ -140,31 +149,34 @@ export default function AdminPanel() { // admin dashboard with user management a
                 {selectedUser && (
                     <div className="modal-overlay">
                         <div className="modal">
-                            <h3>Change Role for {selectedUser.name}</h3>
-                            <p>Current role: <strong>{selectedUser.role}</strong></p>
-                            
-                            <div className="form-group">
-                                <label>New Role</label>
-                                <select 
-                                    value={newRole} 
-                                    onChange={(e) => setNewRole(e.target.value)}
-                                >
-                                    <option value="user">User</option>
-                                    <option value="manager">Manager</option>
-                                    <option value="admin">Admin</option>
-                                </select>
+                            <div className="modal-header">
+                                <h3>Change Role for {selectedUser.name}</h3>
                             </div>
-                            
-                            <div className="form-actions">
+                            <div className="modal-body">
+                                <p style={{ marginBottom: '24px' }}>Current role: <strong>{selectedUser.role}</strong></p>
+                                
+                                <div className="form-group">
+                                    <label>New Role</label>
+                                    <select 
+                                        value={newRole} 
+                                        onChange={(e) => setNewRole(e.target.value)}
+                                    >
+                                        <option value="user">User</option>
+                                        <option value="manager">Manager</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
                                 <button 
                                     onClick={() => setSelectedUser(null)}
-                                    className="btn-secondary"
+                                    className="btn btn-secondary"
                                 >
                                     Cancel
                                 </button>
                                 <button 
                                     onClick={() => handleRoleChange(selectedUser._id)}
-                                    className="btn-primary"
+                                    className="btn btn-primary"
                                 >
                                     Update Role
                                 </button>

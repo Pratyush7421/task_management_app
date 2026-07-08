@@ -8,7 +8,7 @@ export default function Home() { // landing page with navigation and hero sectio
         <div className="home-page">
             <nav className="home-navbar">
                 <div className="home-nav-logo">
-                    <div className="logo-icon">✦</div>
+                    <img src="/kaara.png" alt="Kaara" />
                     <span>TaskMaster</span>
                 </div>
 
@@ -20,10 +20,10 @@ export default function Home() { // landing page with navigation and hero sectio
 
                 <div className="home-nav-actions">
                     <Link to="/login" className="home-nav-link">Login</Link>
-                    <Link to="/register" className="home-btn-outline">Register</Link>
+                    <Link to="/register" className="btn btn-secondary btn-sm">Register</Link>
                     <Link 
                         to={isAuthenticated ? '/dashboard' : '/register'} 
-                        className="home-btn-primary"
+                        className="btn btn-primary btn-sm"
                     >
                         Get Started
                     </Link>
@@ -31,9 +31,6 @@ export default function Home() { // landing page with navigation and hero sectio
             </nav>
 
             <section className="hero-section">
-                <div className="hero-orb"></div>
-                <div className="hero-orb hero-orb-2"></div>
-
                 <div className="hero-content">
                     <h1 className="hero-title">
                         The Smarter,<br />
@@ -42,7 +39,7 @@ export default function Home() { // landing page with navigation and hero sectio
                     </h1>
 
                     <p className="hero-subtitle">
-                        Kaara the power of intelligent task organization with TaskMaster.
+                        Experience the power of intelligent task organization with TaskMaster Pro.
                         Streamline your workflow, collaborate seamlessly, and achieve more.
                     </p>
 
@@ -57,18 +54,25 @@ export default function Home() { // landing page with navigation and hero sectio
                             Sign In
                         </Link>
                     </div>
-
-                    {/* <p className="hero-lorem">
-                        KAARA task management redefined with AI. Experience intelligent organization, seamless collaboration, and effortless productivity. Join TaskMaster today and transform the way you work.
-                    </p> */}
                 </div>
 
                 <div className="hero-visual">
-                    <div className="hero-ring hero-ring-1"></div>
-                    <div className="hero-ring hero-ring-2"></div>
-                    <div className="hero-ring hero-ring-3"></div>
-                    <div className="hero-coin"></div>
-                    <div className="hero-glow"></div>
+                    <div className="hero-illustration">
+                        <div className="gradient-orb orb-1"></div>
+                        <div className="gradient-orb orb-2"></div>
+                        <div className="gradient-orb orb-3"></div>
+                        <div className="concentric-ring ring-1"></div>
+                        <div className="concentric-ring ring-2"></div>
+                        <div className="concentric-ring ring-3"></div>
+                        <div className="floating-shape shape-1"></div>
+                        <div className="floating-shape shape-2"></div>
+                        <div className="floating-shape shape-3"></div>
+                        <div className="particle particle-1"></div>
+                        <div className="particle particle-2"></div>
+                        <div className="particle particle-3"></div>
+                        <div className="particle particle-4"></div>
+                        <div className="particle particle-5"></div>
+                    </div>
                 </div>
             </section>
         </div>

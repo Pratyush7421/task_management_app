@@ -17,6 +17,7 @@ export function AuthProvider({ children }) { // provides auth state and methods 
         setLoading(false);
     }, []);
 
+    // login function sends login credentials to the API, receives a token call the API, store token and user data in localStorage, and update state
     const login = async (email, password) => { // authenticates user, stores token and user data
         const response = await api.post('/auth/login', { email, password });
         const { user: userData, token } = response.data;
@@ -27,7 +28,7 @@ export function AuthProvider({ children }) { // provides auth state and methods 
         
         return userData;
     };
-
+// register function sends user data to API, receives token and user info, and stores them in localStorage and state
     const register = async (name, email, password) => { // registers new user, stores token and user data
         const response = await api.post('/auth/register', { 
             name, 

@@ -54,15 +54,18 @@ export default function VerifyOTP() { // OTP verification page for email confirm
     return (
         <div className="auth-container">
             <div className="auth-card">
-                <h2>Verify Your Email</h2>
-                <p>Enter the 6-digit OTP sent to <strong>{email}</strong></p>
+                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                    <img src="/kaara.png" alt="Kaara" style={{ width: '64px', height: '64px', marginBottom: '16px' }} />
+                    <h2>Verify Your Email</h2>
+                    <p>Enter the 6-digit code sent to <strong>{email}</strong></p>
+                </div>
 
                 {error && <div className="error-message">{error}</div>}
                 {message && <div className="success-message">{message}</div>}
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>OTP Code</label>
+                        <label>Verification Code</label>
                         <input
                             type="text"
                             value={otp}
@@ -70,22 +73,24 @@ export default function VerifyOTP() { // OTP verification page for email confirm
                             placeholder="Enter 6-digit code"
                             maxLength={6}
                             required
+                            style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '8px' }}
                         />
                     </div>
 
-                    <button type="submit" disabled={loading}>
+                    <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
                         {loading ? 'Verifying...' : 'Verify Email'}
                     </button>
                 </form>
 
-                <div className="resend-section">
-                    <p>Didn't receive the code?</p>
+                <div style={{ textAlign: 'center', marginTop: '24px' }}>
+                    <p style={{ marginBottom: '8px' }}>Didn't receive the code?</p>
                     <button 
                         onClick={handleResend} 
-                        className="btn-link"
+                        className="btn btn-secondary"
                         disabled={loading}
+                        style={{ width: '100%' }}
                     >
-                        Resend OTP
+                        Resend Code
                     </button>
                 </div>
             </div>

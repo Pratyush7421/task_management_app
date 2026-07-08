@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Task = require('../models/Task');
 const User = require('../models/User');
+const EmailLog = require('../models/EmailLog');
+const { sendTaskNotificationEmail, buildTaskNotificationEmailData } = require('./email.service');
 
 //hepler function to build query filter based on user role and filters
 const buildTaskFilter = async (userId, userRole, { status, priority, search }) => { // builds query filter based on user role and filters
@@ -73,6 +75,7 @@ const getTaskStats = async (userId) => { // returns task statistics for user
             }
         }
     ]);
+//in MongoDB aggregation every operator starts with $ sign
 
     return stats.length > 0 ? stats[0] : {
         total: 0,
@@ -99,9 +102,65 @@ const getTaskById = async (taskId, userId, userRole) => { // fetches single task
     return { task };
 };
 
-const createTask = async (userId, taskData) => { // creates new task
+/**
+ * Logs email attempt to EmailLog collection
+ * @param {Object} logData - Email log data
+ */
+const logEmailAttempt = async (logData) => {
+    try {
+        await EmailLog.create(logData);
+    } catch (error) {
+        console.error('Failed to log email attempt:', error.message);
+    }
+};
+
+/**
+ * Sends task notification email and logs the attempt
+ * Non-blocking - task creation succeeds even if email fails
+ */
+const sendTaskNotification = async (task, recipientUser, assignedByUser = null) => {
+    const emailData = buildTaskNotificationEmailData({
+        recipientUser,
+        task,
+        assignedByUser,
+        dashboardUrl: process.env.FRONTEND_URL || 'http://localhost:5173/dashboard'
+    });
+
+    console.log('Task created successfully');
+    console.log('Preparing notification email...');
+
+    // Send email
+    const emailResult = await sendTaskNotificationEmail(emailData);
+
+    // Log email attempt
+    await logEmailAttempt({
+        recipientEmail: recipientUser.email,
+        recipientName: recipientUser.name,
+        subject: `New Task Notification - ${task.title}`,
+        templateName: 'taskNotification',
+        taskId: task._id,
+        status: emailResult.success ? 'SUCCESS' : 'FAILED',
+        errorMessage: emailResult.error || null,
+        sentAt: new Date()
+    });
+
+    if (emailResult.success) {
+        console.log('Notification email sent successfully.');
+    } else {
+        console.log('Email sending failed.');
+        console.log('Reason:', emailResult.error);
+    }
+
+    return {
+        emailSent: emailResult.success,
+        emailError: emailResult.error || null
+    };
+};
+
+const createTask = async (userId, taskData, currentUser = null) => { // creates new task and sends notification email
     const { title, description, status, priority, due_date } = taskData;
 
+    // Step 1: Create task in database
     const task = await Task.create({
         userId,
         title,
@@ -111,7 +170,36 @@ const createTask = async (userId, taskData) => { // creates new task
         dueDate: due_date || null
     });
 
-    return { task };
+    console.log('Task created successfully:', task._id);
+
+    // Step 2: Fetch recipient user information
+    let emailResult = { emailSent: false, emailError: null };
+    
+    try {
+        const recipientUser = await User.findById(userId).select('name email');
+        
+        if (recipientUser) {
+            // Step 3: Send notification email (non-blocking)
+            emailResult = await sendTaskNotification(
+                task,
+                recipientUser,
+                currentUser
+            );
+        } else {
+            console.error('Recipient user not found for email notification');
+        }
+    } catch (error) {
+        console.error('Failed to send task notification:', error.message);
+        // Task creation still succeeds - email failure is logged but not thrown
+    }
+
+    // Step 4: Return task with email status
+    return { 
+        task,
+        emailSent: emailResult.emailSent,
+        emailStatus: emailResult.emailSent ? 'SUCCESS' : 'FAILED',
+        emailError: emailResult.emailError
+    };
 };
 
 const updateTask = async (taskId, userId, userRole, updateData) => { // updates task by ID with ownership check
@@ -148,6 +236,7 @@ const deleteTask = async (taskId, userId, userRole) => { // deletes task by ID w
     const filter = userRole === 'admin'
         ? { _id: taskId }
         : { _id: taskId, userId };
+        //?:Ternary operator checks if the user is an admin. If so, it sets the filter to find the task by its ID only. If not, it sets the filter to find the task by its ID and the user's ID, ensuring that only the owner can delete their task.
 
     const task = await Task.findOneAndDelete(filter);
 
@@ -168,3 +257,5 @@ module.exports = {
     updateTask,
     deleteTask
 };
+
+

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import api from '../api/axios';
 
 const getInitialFormData = () => ({
+    userId: '',
     title: '',
     description: '',
     status: 'pending',
@@ -8,22 +10,28 @@ const getInitialFormData = () => ({
     due_date: ''
 });
 
-export default function TaskForm({ task, onSubmit, onCancel, resetKey = 0 }) { // form for creating/editing tasks
+export default function AdminTaskForm({ onSubmit, onCancel, resetKey = 0 }) { // form for admin to create tasks for users
     const [formData, setFormData] = useState(getInitialFormData());
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [usersLoading, setUsersLoading] = useState(true);
 
-    useEffect(() => { // populates form when editing existing task or resets it for new submissions
-        if (task) {
-            setFormData({
-                title: task.title || '',
-                description: task.description || '',
-                status: task.status || 'pending',
-                priority: task.priority || 'medium',
-                due_date: task.dueDate ? task.dueDate.split('T')[0] : ''
-            });
-        } else {
-            setFormData(getInitialFormData());
+    useEffect(() => { // fetches users list when component mounts or resets
+        fetchUsers();
+        setFormData(getInitialFormData());
+    }, [resetKey]);
+
+    const fetchUsers = async () => { // loads users from admin API
+        try {
+            setUsersLoading(true);
+            const response = await api.get('/admin/users');
+            setUsers(response.data.users);
+        } catch (err) {
+            console.error('Failed to load users:', err);
+        } finally {
+            setUsersLoading(false);
         }
-    }, [task, resetKey]);
+    };
 
     const handleChange = (e) => { // updates form field on input change
         setFormData({ 
@@ -34,6 +42,12 @@ export default function TaskForm({ task, onSubmit, onCancel, resetKey = 0 }) { /
 
     const handleSubmit = (e) => { // submits form data to parent
         e.preventDefault();
+        
+        if (!formData.userId) {
+            alert('Please select a user');
+            return;
+        }
+        
         onSubmit(formData);
     };
 
@@ -41,11 +55,34 @@ export default function TaskForm({ task, onSubmit, onCancel, resetKey = 0 }) { /
         <div className="modal-overlay">
             <div className="modal">
                 <div className="modal-header">
-                    <h3>{task ? 'Edit Task' : 'Create New Task'}</h3>
+                    <h3>Create Task for User</h3>
                 </div>
-                
+
                 <div className="modal-body">
                     <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label>Select User *</label>
+                            {usersLoading ? (
+                                <select disabled>
+                                    <option>Loading users...</option>
+                                </select>
+                            ) : (
+                                <select 
+                                    name="userId" 
+                                    value={formData.userId} 
+                                    onChange={handleChange}
+                                    required
+                                >
+                                    <option value="">Choose a user...</option>
+                                    {users.map(user => (
+                                        <option key={user._id} value={user._id}>
+                                            {user.name} ({user.email}) - {user.role}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+
                         <div className="form-group">
                             <label>Title *</label>
                             <input
@@ -123,8 +160,9 @@ export default function TaskForm({ task, onSubmit, onCancel, resetKey = 0 }) { /
                         type="button"
                         onClick={handleSubmit}
                         className="btn btn-primary"
+                        disabled={loading || usersLoading}
                     >
-                        {task ? 'Update Task' : 'Create Task'}
+                        {loading ? 'Creating...' : 'Create Task'}
                     </button>
                 </div>
             </div>

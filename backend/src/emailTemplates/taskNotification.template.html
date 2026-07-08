@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Task Notification - TaskMaster Pro</title>
+    <style>
+        @media only screen and (max-width: 600px) {
+            .container { width: 100% !important; padding: 10px !important; }
+            .content { padding: 20px !important; }
+            .header { padding: 20px !important; }
+            .task-card { padding: 15px !important; }
+            .cta-button { width: 100% !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f7fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table role="presentation" class="container" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td class="header" style="padding: 30px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
+                                            <span style="color: white; font-size: 28px; font-weight: bold;">✓</span>
+                                        </div>
+                                        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">TaskMaster Pro</h1>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="content" style="padding: 40px;">
+                            <p style="color: #2c3e50; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                                {{greeting}}
+                            </p>
+
+                            <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                                {{introText}}
+                            </p>
+
+                            <div class="task-card" style="background-color: #f8fafc; border-left: 4px solid {{priorityColor}}; border-radius: 6px; padding: 25px; margin: 25px 0;">
+                                <div style="display: inline-block; background-color: {{priorityColor}}; color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px;">
+                                    {{priorityLabel}}
+                                </div>
+
+                                <h2 style="color: #2c3e50; font-size: 22px; font-weight: 600; margin: 0 0 15px 0; line-height: 1.3;">
+                                    {{taskTitle}}
+                                </h2>
+
+                                {{descriptionBlock}}
+
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 20px;">
+                                    <tr>
+                                        <td style="padding: 8px 0; width: 120px;">
+                                            <span style="color: #7f8c8d; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Status</span>
+                                        </td>
+                                        <td style="padding: 8px 0;">
+                                            <span style="color: #2c3e50; font-size: 14px; font-weight: 500; text-transform: capitalize;">{{status}}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0;">
+                                            <span style="color: #7f8c8d; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Due Date</span>
+                                        </td>
+                                        <td style="padding: 8px 0;">
+                                            <span style="color: #2c3e50; font-size: 14px; font-weight: 500;">{{dueDate}}</span>
+                                        </td>
+                                    </tr>
+                                    {{assignedByRow}}
+                                    <tr>
+                                        <td style="padding: 8px 0;">
+                                            <span style="color: #7f8c8d; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">{{assignmentLabel}}</span>
+                                        </td>
+                                        <td style="padding: 8px 0;">
+                                            <span style="color: #2c3e50; font-size: 14px; font-weight: 500;">{{assignmentValue}}</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{dashboardUrl}}" class="cta-button" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);">
+                                            View Dashboard
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+
+                            <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 10px 0;">
+                                If you have any questions regarding this task, please contact your administrator.
+                            </p>
+
+                            <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 20px 0 0 0;">
+                                This is an automated notification from TaskMaster Pro.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 25px; text-align: center; background-color: #f8fafc; border-radius: 0 0 8px 8px; border-top: 1px solid #e2e8f0;">
+                            <p style="color: #64748b; font-size: 14px; margin: 0 0 5px 0; font-weight: 500;">
+                                Regards,
+                            </p>
+                            <p style="color: #667eea; font-size: 15px; margin: 0; font-weight: 600;">
+                                TaskMaster Pro Team
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

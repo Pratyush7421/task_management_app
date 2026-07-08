@@ -12,6 +12,7 @@ router.put('/users/:id/role', authenticateToken, isAdmin, roleUpdateValidation, 
 router.put('/users/:id/team', authenticateToken, isAdmin, adminController.updateUserTeam);
 router.get('/tasks', authenticateToken, isAdmin, adminController.getAllTasks);
 router.delete('/tasks/:id', authenticateToken, isAdmin, adminController.deleteTask);
+router.post('/tasks', authenticateToken, isAdmin, adminController.createTaskForUser);
 router.get('/stats', authenticateToken, isAdmin, adminController.getStats);
 
 module.exports = router;
