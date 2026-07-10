@@ -35,17 +35,22 @@ backend/src/
 │   ├── validate.middleware.js    ← All validation rules
 │   └── error.middleware.js       ← Global error handler
 ├── models/
-│   ├── User.js                  ← User schema
-│   └── Task.js                  ← Task schema
+│   ├── User.js                  ← User schema (with OTP fields)
+│   ├── Task.js                  ← Task schema (with createdBy field)
+│   └── EmailLog.js              ← Email audit log schema
 ├── routes/
 │   ├── auth.routes.js           ← /api/v1/auth/*
 │   ├── task.routes.js           ← /api/v1/tasks/*
 │   └── admin.routes.js          ← /api/v1/admin/*
-└── services/
-    ├── auth.service.js          ← Auth business logic + DB
-    ├── task.service.js          ← Task business logic + DB
-    ├── admin.service.js         ← Admin business logic + DB
-    └── email.service.js         ← Nodemailer / Gmail SMTP
+├── services/
+│   ├── auth.service.js          ← Auth business logic + DB
+│   ├── task.service.js          ← Task business logic + DB
+│   ├── admin.service.js         ← Admin business logic + DB
+│   └── email.service.js         ← Nodemailer / Gmail SMTP
+└── emailTemplates/
+    ├── index.js                          ← Template registry
+    ├── taskNotification.template.js      ← Template data builder
+    └── taskNotification.template.html    ← HTML email template
 ```
 
 ### Request Flow Example (Register)
@@ -585,7 +590,70 @@ RESPONSE (200 OK)
 
 ---
 
-### 6. DELETE `/api/v1/admin/tasks/:id`
+### 6. POST `/api/v1/admin/tasks`
+**Purpose:** Admin creates a task for any user, sends email notification, logs email attempt (admin only)
+
+**Request Flow:**
+```
+CLIENT REQUEST (with Authorization header)
+    ↓
+Route: POST /api/v1/admin/tasks
+    ↓
+auth.middleware.js → authenticateToken()
+    ↓
+role.middleware.js → isAdmin()
+    ↓
+admin.controller.js → createTaskForUser()
+    - Builds adminUser = { _id: req.user.userId, name: req.user.name, email: req.user.email }
+    - Calls: AdminService.createTaskForUser(req.body, adminUser)
+    - Returns: res.status(201).json({ message, task, emailSent, emailStatus })
+    ↓
+admin.service.js → createTaskForUser({ userId, title, description, status, priority, due_date }, adminUser)
+    1. User.findById(userId).select('name email') → 404 if user not found
+    2. Task.create({
+         userId: targetUser._id,
+         title,
+         description,
+         status,
+         priority,
+         dueDate: due_date,        ← maps due_date → dueDate
+         createdBy: adminUser._id  ← records which admin created it
+       })
+    3. sendTaskNotification(task, targetUser, adminUser)  ← non-blocking
+       ↓
+       email.service.js → buildTaskNotificationEmailData()
+           → Builds { to, subject, html } from taskNotification.template.js
+       ↓
+       email.service.js → sendTaskNotificationEmail(emailData)
+           → nodemailer transporter.sendMail() via Gmail SMTP
+           → Returns { success: true/false, error }
+       ↓
+       EmailLog.create({
+         recipientEmail, recipientName, subject,
+         templateName: 'taskNotification',
+         taskId: task._id,
+         status: 'SUCCESS' | 'FAILED',
+         errorMessage, sentAt
+       })
+    4. Return { task, emailSent, emailStatus, emailError }
+    ↓
+RESPONSE (201 Created)
+{
+  "message": "Task created successfully for user. Notification email sent successfully.",
+  "task": {
+    "_id": "...", "userId": "...", "title": "...", "status": "pending",
+    "priority": "high", "dueDate": "...", "createdBy": "adminId", ...
+  },
+  "emailSent": true,
+  "emailStatus": "SUCCESS"
+}
+```
+
+**Note:** Email notification is non-blocking. If email sending fails, the task is still created and returned. The failure is logged in `EmailLog` with `status: 'FAILED'`.
+
+---
+
+### 7. DELETE `/api/v1/admin/tasks/:id`
 **Purpose:** Delete any task (admin only)
 
 **Request Flow:**
@@ -612,7 +680,7 @@ RESPONSE (200 OK)
 
 ---
 
-### 7. GET `/api/v1/admin/stats`
+### 8. GET `/api/v1/admin/stats`
 **Purpose:** Get system-wide statistics (admin only)
 
 **Request Flow:**
@@ -689,7 +757,6 @@ Use err.statusCode if set, else 500
 Return { error: err.message }
 ```
 
-
 ---
 
 ## 📊 Service Layer Reference
@@ -723,12 +790,17 @@ Return { error: err.message }
 | `getAllTasksAdmin` | `{ status, priority, userId, search }` | `Task.find` |
 | `deleteTaskAdmin` | `taskId` | `Task.findByIdAndDelete` |
 | `getAdminStats` | none | `User.aggregate`, `Task.aggregate`, `User.populate`, `User.countDocuments` |
+| `createTaskForUser` | `taskData, adminUser` | `User.findById`, `Task.create`, `EmailLog.create` |
+| `sendTaskNotification` | `task, recipientUser, assignedByUser` | `EmailLog.create` (via `logEmailAttempt`) |
+| `logEmailAttempt` | `logData` | `EmailLog.create` |
 
 ### `email.service.js`
 | Function | Parameters | External |
 |----------|-----------|----------|
-| `generateOTP` | none | Math.random() |
+| `generateOTP` | none | `Math.random()` |
 | `sendOTPEmail` | `email, otp` | Gmail SMTP via nodemailer |
+| `buildTaskNotificationEmailData` | `{ recipientUser, task, assignedByUser, dashboardUrl }` | Builds email payload from template |
+| `sendTaskNotificationEmail` | `emailData` | Gmail SMTP via nodemailer |
 
 ---
 
@@ -759,6 +831,24 @@ Return { error: err.message }
   status: String (pending|in_progress|completed, default: pending),
   priority: String (low|medium|high, default: medium),
   dueDate: Date (optional),
+  attachmentUrl: String (optional),
+  createdBy: ObjectId (optional) → ref: User (admin who created on behalf),
+  createdAt: Date (auto),
+  updatedAt: Date (auto)
+}
+```
+
+### EmailLog Model (`src/models/EmailLog.js`)
+```
+{
+  recipientEmail: String (required),
+  recipientName: String,
+  subject: String,
+  templateName: String,
+  taskId: ObjectId → ref: Task,
+  status: String (SUCCESS|FAILED),
+  errorMessage: String (null on success),
+  sentAt: Date,
   createdAt: Date (auto),
   updatedAt: Date (auto)
 }
@@ -786,7 +876,24 @@ Signature: HMAC-SHA256(header.payload, JWT_SECRET)
 ### Role-Based Access Control (RBAC)
 - **User**: Can only access own tasks
 - **Manager**: Can access own tasks + team members' tasks
-- **Admin**: Can access all tasks and users, admin routes
+- **Admin**: Can access all tasks and users, admin routes, create tasks for any user
+
+### Email Notification Architecture
+```
+Admin creates task for user
+    ↓
+Task saved to MongoDB (Tasks collection)
+    ↓
+sendTaskNotification() called (non-blocking try/catch)
+    ↓
+buildTaskNotificationEmailData() → builds HTML email from template
+    ↓
+sendTaskNotificationEmail() → Gmail SMTP via nodemailer
+    ↓
+logEmailAttempt() → EmailLog.create() → saved to MongoDB (EmailLogs collection)
+    ↓
+Task creation response returned regardless of email outcome
+```
 
 ---
 
@@ -797,10 +904,13 @@ PORT=5000
 MONGODB_URI=mongodb://localhost:27017/taskmaster
 JWT_SECRET=your_super_secret_jwt_key
 JWT_EXPIRES_IN=7d
+
+# Email (Gmail SMTP)
 EMAIL_USER=your_gmail@gmail.com
 EMAIL_PASS=your_gmail_app_password
-MAX_FILE_SIZE=5242880
-UPLOAD_DIR=uploads
+
+# Frontend URL (used in email notification links)
+FRONTEND_URL=http://localhost:5173
 ```
 
 ---
@@ -827,3 +937,10 @@ UPLOAD_DIR=uploads
    Headers: Authorization: Bearer <token>
    → auth.middleware → task.controller → task.service → Task.find
    Response: 200 { tasks }
+
+5. POST /api/v1/admin/tasks (admin creates task for user)
+   Headers: Authorization: Bearer <admin_token>
+   Body: { userId, title, description, status, priority, due_date }
+   → auth.middleware → role.middleware (isAdmin) → admin.controller → admin.service
+   → Task.create + sendTaskNotificationEmail + EmailLog.create
+   Response: 201 { message, task, emailSent, emailStatus }

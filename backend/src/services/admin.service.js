@@ -300,22 +300,25 @@ const createTaskForUser = async (taskData, adminUser = null) => {
         throw error;
     }
 
+    // Create the task first - this MUST succeed
     const task = await Task.create({
         userId: targetUser._id,
         title,
         description: description || '',
         status: status || 'pending',
         priority: priority || 'medium',
-        dueDate: due_date || null,
+        dueDate: due_date || null, // Map due_date to dueDate field
         createdBy: adminUser?._id || null
     });
 
+    // Email notification is non-blocking - task creation succeeds regardless
     let emailResult = { emailSent: false, emailError: null };
 
     try {
         emailResult = await sendTaskNotification(task, targetUser, adminUser);
     } catch (error) {
         console.error('Failed to send task notification:', error.message);
+        // Don't throw - task creation was successful, email is optional
     }
 
     return {
